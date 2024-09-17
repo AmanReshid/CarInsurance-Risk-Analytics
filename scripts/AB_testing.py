@@ -8,7 +8,8 @@ def generate_insurance_data(num_records=1000):
     np.random.seed(42)  # For reproducibility
     provinces = ['Province_A', 'Province_B', 'Province_C']
     genders = ['Male', 'Female']
-    
+    zip_codes = ['12345', '67890', '11223'] 
+
     # Define claim rates for each province to create a significant difference
     claim_rates_province = {
         'Province_A': 0.1,  # 10% claim rate
@@ -25,17 +26,24 @@ def generate_insurance_data(num_records=1000):
     # Generate province and gender
     province_choices = np.random.choice(provinces, num_records)
     gender_choices = np.random.choice(genders, num_records)
-    
+    zip_code_choices = np.random.choice(zip_codes, num_records) 
+
     # Generate claims based on gender
     claims = [1 if np.random.rand() < claim_rates_gender[gender] else 0 for gender in gender_choices]
-    
+
+   # Generate random margins (profits) with a normal distribution
+    margins = np.random.normal(500, 50, num_records)  # Example margin values around 500 with a standard deviation of 50
+     
     data = {
         'Province': province_choices,
         'Gender': gender_choices,
-        'Claimed': claims
+        'ZipCode': zip_code_choices,
+        'Claimed': claims,
+        'Margin': margins
     }
     
     return pd.DataFrame(data)
+
 
 def save_data_to_csv(data, filename='insurance_data.csv'):
     
@@ -50,6 +58,20 @@ def ab_test(data):
     contingency_table = pd.crosstab(data['Province'], data['Claimed'])
     chi2, p, dof, expected = chi2_contingency(contingency_table)
     return chi2, p, contingency_table
+
+def ab_test_zip_code(data):
+    """Perform A/B testing using Chi-squared test for zip codes."""
+    contingency_table_zip = pd.crosstab(data['ZipCode'], data['Claimed'])
+    chi2_zip, p_zip, dof_zip, expected_zip = chi2_contingency(contingency_table_zip)
+    return chi2_zip, p_zip, contingency_table_zip
+
+def margin_analysis_zip_codes(data):
+    """Perform t-test analysis based on margins (profits) between zip codes."""
+    zip_code_1 = data[data['ZipCode'] == '12345']['Margin']
+    zip_code_2 = data[data['ZipCode'] == '67890']['Margin']
+    
+    t_stat_zip, p_value_zip = ttest_ind(zip_code_1, zip_code_2, equal_var=False)  # Two-sample t-test
+    return t_stat_zip, p_value_zip
 
 def gender_analysis(data):
     """Perform t-test analysis based on gender."""
